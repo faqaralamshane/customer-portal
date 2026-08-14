@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="no-referrer">
+    <title>بوابة الزبون الإلكترونية | كشف الحساب المالي المباشر</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --card-bg: rgba(22, 30, 46, 0.9);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.25);
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 100%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        /* Security Header Bar */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 22px;
+            color: white;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        .brand-text h1 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+
+        .brand-text p {
+            font-size: 10px;
+            color: #34d399;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Customer Security Passport Card */
+        .portal-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+
+        .customer-passport {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(2, 132, 199, 0.4));
+            color: var(--primary);
+            border: 2px solid rgba(56, 189, 248, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            box-shadow: 0 0 16px var(--primary-glow);
+        }
+
+        .customer-info h2 {
+            font-size: 17px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .customer-info p {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 50px;
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--success);
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* 3-KPI Overview Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .kpi-box {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .kpi-box span {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .kpi-box strong {
+            font-size: 13px;
+            font-weight: 700;
+            display: block;
+        }
+
+        /* Navigation Tabs */
+        .tabs-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+        }
+
+        .tabs-row::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            color: white;
+            font-weight: 700;
+            border-color: transparent;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        /* Accordion Item Card */
+        .accordion-card {
+            background: rgba(26, 36, 56, 0.85);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .accordion-card:hover {
+            border-color: rgba(56, 189, 248, 0.35);
+        }
+
+        .accordion-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .accordion-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .accordion-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chevron-icon {
+            font-size: 12px;
+            color: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-card.open .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-top: 1px dashed rgba(255, 255, 255, 0.08);
+            padding-top: 8px;
+            margin-top: 2px;
+        }
+
+        /* Progress Mini Bar */
+        .progress-container {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #34d399);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Accordion Expandable Body (Payments History) */
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-in-out;
+            background: rgba(15, 23, 42, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .accordion-card.open .accordion-body {
+            max-height: 800px;
+        }
+
+        .payments-list {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .payments-header {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 12px;
+        }
+
+        .payment-date {
+            color: var(--text-muted);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .payment-amount {
+            color: var(--success);
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .payment-notes {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .pill {
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .pill-success { background: rgba(52, 211, 153, 0.2); color: var(--success); }
+        .pill-warning { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+        .pill-danger { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
+
+        .hidden { display: none !important; }
+        
+        .footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 20px;
+            padding-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 30px 10px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            border: 1px dashed var(--card-border);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top App Brand Header -->
+        <header class="app-header">
+            <div class="app-brand">
+                <div class="brand-logo">أ</div>
+                <div class="brand-text">
+                    <h1>بوابة الزبون الإلكترونية</h1>
+                    <p>🔒 اتصال تشفير آمن ومعتمد</p>
+                </div>
+            </div>
+            <div style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: var(--primary); padding: 4px 10px; border-radius: 50px; font-weight: 700;">
+                كشف رسمي
+            </div>
+        </header>
+
+        <!-- Direct Instant Portal Dashboard -->
+        <div id="portalSection">
+            <!-- Customer Passport Card -->
+            <div class="portal-card">
+                <div class="customer-passport">
+                    <div id="custAvatar" class="avatar">ز</div>
+                    <div class="customer-info">
+                        <h2 id="custName">جاري فتح كشف الحساب...</h2>
+                        <p id="custPhone">---</p>
+                        <div id="securityBadge" class="security-badge">
+                            <span>🔒 حساب موثق ومحدث حياً</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-box">
+                        <span>إجمالي المستحقات</span>
+                        <strong id="totalOwed" style="color: var(--danger);">0 د.ع</strong>
+                    </div>
+                    <div class="kpi-box">
+                        <span>الأقساط المسددة</span>
+                        <strong id="paidMonths" style="color: var(--success);">0 شهر</strong>
+                    </div>
+                    <div class="kpi-box">
+                        <span>الأشهر المتبقية</span>
+                        <strong id="remMonths" style="color: var(--warning);">0 شهر</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="tabs-row">
+                <button class="tab-btn active" onclick="switchTab('contracts')">📜 الأقساط والعقود</button>
+                <button class="tab-btn" onclick="switchTab('debts')">💳 الديون المباشرة</button>
+                <button class="tab-btn" onclick="switchTab('salafs')">🤝 السلف والجمعيات</button>
+            </div>
+
+            <!-- Content Tab Views -->
+            <div id="tabContracts"></div>
+            <div id="tabDebts" class="hidden"></div>
+            <div id="tabSalafs" class="hidden"></div>
+        </div>
+
+        <div class="footer-note">
+            جميع البيانات المحاسبية مشفرة ومحفوظة بنظام أمان المحاسبي المعتمد © 2026
+        </div>
+    </div>
+
+    <script>
+        // Initialize Firebase Firestore for optional realtime sync
+        const firebaseConfig = {
+            projectId: "gen-lang-client-0815215637",
+            storageBucket: "gen-lang-client-0815215637.firebasestorage.app",
+            apiKey: "AIzaSyCAE3c3Rhnda3q5IdPV3vrXY0RcEBGGjpE",
+            appId: "1:596626879652:android:f44baf74a4c08e5bb66231"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function decodePayload(str) {
+            try {
+                let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                const decodedText = new TextDecoder('utf-8').decode(bytes);
+                return JSON.parse(decodedText);
+            } catch (e) {
+                console.error("Payload decode error:", e);
+                return null;
+            }
+        }
+
+        function extractParams() {
+            // Read from URL hash (#) first for Safe Browsing protection, then fallback to search (?)
+            let rawStr = window.location.hash ? window.location.hash.substring(1) : window.location.search.substring(1);
+            const params = new URLSearchParams(rawStr);
+            return {
+                t: (params.get('t') || '').replace(/\s+/g, ''),
+                d: (params.get('d') || '').replace(/\s+/g, '')
+            };
+        }
+
+        window.onload = function() {
+            const { t, d } = extractParams();
+
+            let renderedDirectly = false;
+            if (d) {
+                const payloadData = decodePayload(d);
+                if (payloadData) {
+                    renderRealSnapshot(payloadData);
+                    renderedDirectly = true;
+                }
+            }
+
+            if (t) {
+                fetchByToken(t, renderedDirectly);
+            } else if (!renderedDirectly) {
+                document.getElementById('custName').innerText = "يرجى استخدام الرابط الشخصي المباشر";
+            }
+        };
+
+        function fetchByToken(token, alreadyRendered) {
+            try {
+                db.collection("portals").doc(token).onSnapshot((doc) => {
+                    if (doc && doc.exists) {
+                        const data = doc.data();
+                        if (data.isFrozen) {
+                            alert("عذراً، تم تجميد وإيقاف دخول هذا الحساب مؤقتاً من قبل الإدارة.");
+                            return;
+                        }
+                        renderRealSnapshot(data);
+                    }
+                }, (error) => {
+                    console.log("Firestore realtime listener notice:", error.message);
+                });
+            } catch (err) {
+                console.log("Firestore listener skipped:", err);
+            }
+        }
+
+        function renderRealSnapshot(data) {
+            document.getElementById('custAvatar').innerText = (data.customerName || "ز").charAt(0);
+            document.getElementById('custName').innerText = data.customerName || "الزبون المحترم";
+            document.getElementById('custPhone').innerText = data.phone || "---";
+
+            document.getElementById('totalOwed').innerText = data.totalOwed || "0 د.ع";
+            document.getElementById('paidMonths').innerText = (data.paidMonths || 0) + " شهر";
+            document.getElementById('remMonths').innerText = (data.remainingMonths || 0) + " شهر";
+
+            renderContracts(data.contracts || []);
+            renderDebts(data.debts || []);
+            renderSalafs(data.salafs || []);
+        }
+
+        function toggleAccordion(element) {
+            element.classList.toggle('open');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('tabContracts').classList.add('hidden');
+            document.getElementById('tabDebts').classList.add('hidden');
+            document.getElementById('tabSalafs').classList.add('hidden');
+
+            if (tab === 'contracts') document.getElementById('tabContracts').classList.remove('hidden');
+            if (tab === 'debts') document.getElementById('tabDebts').classList.remove('hidden');
+            if (tab === 'salafs') document.getElementById('tabSalafs').classList.remove('hidden');
+        }
+
+        function renderContracts(items) {
+            const container = document.getElementById('tabContracts');
+            if (!items.length) { 
+                container.innerHTML = '<div class="empty-state">لا توجد عقود أقساط مسجلة حالياً 📜</div>'; 
+                return; 
+            }
+            container.innerHTML = items.map((i, index) => {
+                const totalMonths = i.totalMonths || 1;
+                const paidMonths = i.paidMonths || 0;
+                const pct = Math.min(100, Math.round((paidMonths / totalMonths) * 100));
+                const payments = i.payments || [];
+
+                const paymentsHtml = payments.length ? payments.map(p => `
+                    <div class="payment-row">
+                        <div>
+                            <div class="payment-date">📅 ${p.date || '---'}</div>
+                            ${p.notes ? `<div class="payment-notes">📝 ${p.notes}</div>` : ''}
+                        </div>
+                        <div class="payment-amount">${p.amount}</div>
+                    </div>
+                `).join('') : '<div style="text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">لم يتم تسجيل دفعات بعد لهذا العقد</div>';
+
+                return `
+                <div class="accordion-card ${index === 0 ? 'open' : ''}" onclick="toggleAccordion(this)">
+                    <div class="accordion-header">
+                        <div class="accordion-top-row">
+                            <span class="accordion-title">
+                                <span>📜 ${i.title}</span>
+                                <span class="chevron-icon">▼</span>
+                            </span>
+                            <span class="pill pill-success">${i.status}</span>
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${pct}%;"></div>
+                        </div>
+
+                        <div class="accordion-summary-row">
+                            <span>القسط: <strong style="color:#f8fafc;">${i.monthlyPayment}</strong></span>
+                            <span>المسدد: <strong style="color:var(--success);">${i.paidMonths} / ${i.totalMonths} شهر</strong></span>
+                            <span>المتبقي: <strong style="color:var(--warning);">${i.remainingAmount}</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="accordion-body" onclick="event.stopPropagation()">
+                        <div class="payments-list">
+                            <div class="payments-header">
+                                <span>سجل دفعات هذا العقد (${payments.length} دفعة)</span>
+                                <span>إجمالي المدفوع: ${pct}%</span>
+                            </div>
+                            ${paymentsHtml}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderDebts(items) {
+            const container = document.getElementById('tabDebts');
+            if (!items.length) { 
+                container.innerHTML = '<div class="empty-state">لا توجد ديون مباشرة مسجلة حالياً 💳</div>'; 
+                return; 
+            }
+            container.innerHTML = items.map((i, index) => {
+                const payments = i.payments || [];
+                const paymentsHtml = payments.length ? payments.map(p => `
+                    <div class="payment-row">
+                        <div>
+                            <div class="payment-date">📅 ${p.date || '---'}</div>
+                            ${p.notes ? `<div class="payment-notes">📝 ${p.notes}</div>` : ''}
+                        </div>
+                        <div class="payment-amount">${p.amount}</div>
+                    </div>
+                `).join('') : '<div style="text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">لم يتم تسجيل دفعات تسديد بعد</div>';
+
+                return `
+                <div class="accordion-card ${index === 0 ? 'open' : ''}" onclick="toggleAccordion(this)">
+                    <div class="accordion-header">
+                        <div class="accordion-top-row">
+                            <span class="accordion-title">
+                                <span>💳 ${i.title}</span>
+                                <span class="chevron-icon">▼</span>
+                            </span>
+                            <span class="pill pill-danger">${i.status}</span>
+                        </div>
+                        <div class="accordion-summary-row">
+                            <span>المبلغ المستحق: <strong>${i.amount}</strong></span>
+                            <span>المتبقي: <strong style="color:var(--danger);">${i.remaining}</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="accordion-body" onclick="event.stopPropagation()">
+                        <div class="payments-list">
+                            <div class="payments-header">
+                                <span>سجل دفعات هذا الدين (${payments.length} دفعة)</span>
+                            </div>
+                            ${paymentsHtml}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderSalafs(items) {
+            const container = document.getElementById('tabSalafs');
+            if (!items.length) { 
+                container.innerHTML = '<div class="empty-state">لا توجد سلف أو جمعيات مسجلة حالياً 🤝</div>'; 
+                return; 
+            }
+            container.innerHTML = items.map((i, index) => {
+                const payments = i.payments || [];
+                const paymentsHtml = payments.length ? payments.map(p => `
+                    <div class="payment-row">
+                        <div class="payment-date">📅 ${p.date || '---'}</div>
+                        <div class="payment-amount">${p.amount}</div>
+                    </div>
+                `).join('') : '<div style="text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">لم تسجل دفعات سلف بعد</div>';
+
+                return `
+                <div class="accordion-card ${index === 0 ? 'open' : ''}" onclick="toggleAccordion(this)">
+                    <div class="accordion-header">
+                        <div class="accordion-top-row">
+                            <span class="accordion-title">
+                                <span>🤝 ${i.title}</span>
+                                <span class="chevron-icon">▼</span>
+                            </span>
+                            <span class="pill pill-success">${i.status}</span>
+                        </div>
+                        <div class="accordion-summary-row">
+                            <span>السهم الشهري: <strong>${i.monthlyShare}</strong></span>
+                            <span>المسدد: <strong style="color:var(--success);">${i.paidMonths} / ${i.totalMonths} شهر</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="accordion-body" onclick="event.stopPropagation()">
+                        <div class="payments-list">
+                            <div class="payments-header">
+                                <span>سجل دفعات السلفة (${payments.length} شهر مسدد)</span>
+                            </div>
+                            ${paymentsHtml}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
