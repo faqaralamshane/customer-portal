@@ -12,6 +12,8 @@
     <!-- Firebase Compatibility SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Pako Gzip Decompression Fallback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako_inflate.min.js"></script>
     <style>
         :root {
             --bg-dark: #090d16;
@@ -468,6 +470,33 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        async function decodeCompressedGzip(str) {
+            try {
+                let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+
+                if (typeof DecompressionStream !== 'undefined') {
+                    const stream = new Response(bytes).body.pipeThrough(new DecompressionStream('gzip'));
+                    const decompressedText = await new Response(stream).text();
+                    return JSON.parse(decompressedText);
+                } else if (typeof pako !== 'undefined') {
+                    const decompressedText = pako.inflate(bytes, { to: 'string' });
+                    return JSON.parse(decompressedText);
+                }
+                return null;
+            } catch (e) {
+                console.error("Gzip decompression error:", e);
+                return null;
+            }
+        }
+
         function decodePayload(str) {
             try {
                 let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -491,17 +520,30 @@
             // Read from URL hash (#) first for Safe Browsing protection, then fallback to search (?)
             let rawStr = window.location.hash ? window.location.hash.substring(1) : window.location.search.substring(1);
             const params = new URLSearchParams(rawStr);
+            const p = (params.get('p') || '').replace(/\s+/g, '');
+            const c = (params.get('c') || '').replace(/\s+/g, '');
+            let t = (params.get('t') || '').replace(/\s+/g, '');
+            if (!t && p && c) {
+                t = `${p}_${c}`;
+            }
             return {
-                t: (params.get('t') || '').replace(/\s+/g, ''),
+                t: t,
+                z: (params.get('z') || '').replace(/\s+/g, ''),
                 d: (params.get('d') || '').replace(/\s+/g, '')
             };
         }
 
-        window.onload = function() {
-            const { t, d } = extractParams();
+        window.onload = async function() {
+            const { t, z, d } = extractParams();
 
             let renderedDirectly = false;
-            if (d) {
+            if (z) {
+                const payloadData = await decodeCompressedGzip(z);
+                if (payloadData) {
+                    renderRealSnapshot(payloadData);
+                    renderedDirectly = true;
+                }
+            } else if (d) {
                 const payloadData = decodePayload(d);
                 if (payloadData) {
                     renderRealSnapshot(payloadData);
