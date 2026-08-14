@@ -577,7 +577,67 @@
             }
         }
 
-        function renderRealSnapshot(data) {
+        function normalizeSnapshot(raw) {
+            if (!raw) return null;
+            if (raw.customerName) return raw; // Already verbose
+            
+            const fmtIQD = (num) => (Number(num) || 0).toLocaleString('en-US') + ' د.ع';
+            
+            return {
+                customerName: raw.n || "الزبون المحترم",
+                phone: raw.p || "---",
+                totalOwed: typeof raw.o === 'number' ? fmtIQD(raw.o) : (raw.o || "0 د.ع"),
+                paidMonths: raw.pm || 0,
+                remainingMonths: raw.rm || 0,
+                contracts: (raw.c || []).map(c => ({
+                    id: c.id || "c",
+                    title: c.t || "عقد أقساط",
+                    totalAmount: fmtIQD(c.a),
+                    monthlyPayment: fmtIQD(c.m),
+                    remainingAmount: fmtIQD(c.r),
+                    paidMonths: c.pm || 0,
+                    totalMonths: c.tm || 1,
+                    status: ((c.r || 0) <= 0) ? "مكتمل المسدد 🟢" : "قائم نشط 🟡",
+                    payments: (c.p || []).map(p => Array.isArray(p) ? {
+                        date: p[0],
+                        amount: fmtIQD(p[1]),
+                        notes: p[2] || "دفعة قسط"
+                    } : p)
+                })),
+                debts: (raw.d || []).map(d => ({
+                    id: d.id || "d",
+                    personName: raw.n,
+                    title: d.t || "دين مباشر",
+                    totalAmount: fmtIQD(d.a),
+                    remainingAmount: fmtIQD(d.r),
+                    status: ((d.r || 0) <= 0) ? "مسدد بالكامل 🟢" : "متبقي بذمته 🔴",
+                    payments: (d.p || []).map(p => Array.isArray(p) ? {
+                        date: p[0],
+                        amount: fmtIQD(p[1]),
+                        notes: p[2] || "تسديد دفعة"
+                    } : p)
+                })),
+                salafs: (raw.s || []).map(s => ({
+                    id: s.id || "s",
+                    name: s.t || "سلفة",
+                    monthlyAmount: fmtIQD(s.m),
+                    remainingAmount: fmtIQD(s.r),
+                    paidMonths: s.pm || 0,
+                    totalMonths: s.tm || 1,
+                    status: ((s.r || 0) <= 0) ? "مكتملة 🟢" : "نشطة 🟡",
+                    payments: (s.p || []).map(p => Array.isArray(p) ? {
+                        date: p[0],
+                        amount: fmtIQD(p[1]),
+                        notes: p[2] || "تسديد سلفة"
+                    } : p)
+                }))
+            };
+        }
+
+        function renderRealSnapshot(raw) {
+            const data = normalizeSnapshot(raw);
+            if (!data) return;
+
             document.getElementById('custAvatar').innerText = (data.customerName || "ز").charAt(0);
             document.getElementById('custName').innerText = data.customerName || "الزبون المحترم";
             document.getElementById('custPhone').innerText = data.phone || "---";
